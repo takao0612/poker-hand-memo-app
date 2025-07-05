@@ -872,126 +872,140 @@
             return cardId;
         }
 
-        // テキストメモ用の新しい表記関数（アルファベット表記）
+        // テキストメモ用の新しい表記関数（アルファベット表記・最適化版）
+        const TEXT_SYMBOLS = { s: 's', h: 'h', d: 'd', c: 'k' };
+        const cardTextCache = new Map();
+        
         function getCardTextMemoText(cardId) {
+            // キャッシュをチェック
+            if (cardTextCache.has(cardId)) {
+                return cardTextCache.get(cardId);
+            }
+            
             const card = ALL_CARDS.find(c => c.id === cardId);
             if (card) {
-                const textSymbols = { s: 's', h: 'h', d: 'd', c: 'k' };
-                return `${card.rank}${textSymbols[card.suit]}`;
+                const text = `${card.rank}${TEXT_SYMBOLS[card.suit]}`;
+                cardTextCache.set(cardId, text);
+                return text;
             }
             return cardId;
         }
 
-        // テキストメモを生成する関数
+        // テキストメモを生成する関数（最適化版）
         function generateTextMemo() {
-            const handTitle = document.getElementById('hand-title').value;
-            const heroPosition = document.getElementById('hero-position').value;
-            const villainPosition = document.getElementById('villain-position').value;
+            // DOM要素をキャッシュ
+            const elements = {
+                handTitle: document.getElementById('hand-title'),
+                heroPosition: document.getElementById('hero-position'),
+                villainPosition: document.getElementById('villain-position'),
+                openSize: document.getElementById('open-size'),
+                preflopAction: document.getElementById('preflop-action'),
+                notes: document.getElementById('notes')
+            };
+            
+            // 値を取得（nullチェック付き）
+            const values = {
+                handTitle: elements.handTitle?.value || '',
+                heroPosition: elements.heroPosition?.value || '',
+                villainPosition: elements.villainPosition?.value || '',
+                openSize: elements.openSize?.value || '',
+                preflopAction: elements.preflopAction?.value || '',
+                notes: elements.notes?.value || ''
+            };
+            
+            // カード情報を取得
             const heroCards = selectedCards.hero.map(getCardTextMemoText).join('');
             const flopCards = selectedCards.flop.map(getCardTextMemoText).join('');
             const turnCard = selectedCards.turn.length > 0 ? getCardTextMemoText(selectedCards.turn[0]) : '';
             const riverCard = selectedCards.river.length > 0 ? getCardTextMemoText(selectedCards.river[0]) : '';
             
-            // プリフロップ用の入力値を取得
-            const openSize = document.getElementById('open-size')?.value || '';
-            const preflopAction = document.getElementById('preflop-action')?.value || '';
-            
-            // メモ内容を取得
-            const notes = document.getElementById('notes')?.value || '';
-            
-            // アクションシーケンスの値を取得
+            // アクション情報を取得（一度に取得）
             const actions = {};
-            actionSequences.forEach(sequence => {
-                const element = document.getElementById(`${sequence.id}-action`);
+            const actionElements = ['flop', 'turn', 'river'].map(id => ({
+                id,
+                element: document.getElementById(`${id}-action`)
+            }));
+            
+            actionElements.forEach(({ id, element }) => {
                 if (element) {
-                    actions[sequence.id] = element.value;
+                    actions[id] = element.value;
                 }
             });
             
-            let memoText = '';
+            // 文字列連結を最適化（配列を使用）
+            const memoParts = [];
             
-            // ハンドタイトルが入力されている場合のみ追加
-            if (handTitle && handTitle.trim() !== '') {
-                memoText += `${handTitle}\n\n`;
+            // ハンドタイトル
+            if (values.handTitle.trim()) {
+                memoParts.push(values.handTitle, '\n\n');
             }
             
-            // ポジション情報を最初に追加
-            if (heroPosition && villainPosition) {
-                memoText += `Hero: ${heroPosition}, Villain: ${villainPosition}\n\n`;
+            // ポジション情報
+            if (values.heroPosition && values.villainPosition) {
+                memoParts.push(`Hero: ${values.heroPosition}, Villain: ${values.villainPosition}`, '\n\n');
             }
             
             // プリフロップ
-            if (heroCards || openSize || preflopAction) {
-                memoText += `=== Preflop ===\n`;
+            if (heroCards || values.openSize || values.preflopAction) {
+                memoParts.push('=== Preflop ===\n');
                 
-                // Heroのハンドが選択されている場合は表示
                 if (heroCards) {
-                    memoText += `Hero ${heroCards}\n`;
+                    memoParts.push(`Hero ${heroCards}\n`);
                 }
                 
-                // オープンサイズがある場合
-                if (openSize) {
-                    // ポジションが浅い方を判定
-                    const earlierPosition = getEarlierPosition(heroPosition, villainPosition);
+                if (values.openSize) {
+                    const earlierPosition = getEarlierPosition(values.heroPosition, values.villainPosition);
+                    const sizeWithBb = values.openSize.includes('bb') ? values.openSize : values.openSize + 'bb';
                     
-                    // 数字に自動でbbを付ける
-                    const sizeWithBb = openSize.includes('bb') ? openSize : openSize + 'bb';
-                    
-                    // 浅い方のポジションにオープンサイズを紐づけ
-                    if (earlierPosition === heroPosition) {
-                        memoText += `${heroPosition} ${sizeWithBb}\n`;
+                    if (earlierPosition === values.heroPosition) {
+                        memoParts.push(`${values.heroPosition} ${sizeWithBb}\n`);
                     } else {
-                        memoText += `${villainPosition} ${sizeWithBb}\n`;
+                        memoParts.push(`${values.villainPosition} ${sizeWithBb}\n`);
                     }
                 }
                 
-                // プリフロップのアクションを表示
-                if (preflopAction) {
-                    memoText += preflopAction + '\n';
+                if (values.preflopAction) {
+                    memoParts.push(values.preflopAction, '\n');
                 }
-                memoText += '\n';
+                memoParts.push('\n');
             }
             
             // フロップ
             if (flopCards) {
-                memoText += `=== Flop ===\n`;
-                memoText += flopCards + '\n';
+                memoParts.push('=== Flop ===\n', flopCards, '\n');
                 if (actions.flop) {
-                    memoText += actions.flop + '\n';
+                    memoParts.push(actions.flop, '\n');
                 }
-                memoText += '\n';
+                memoParts.push('\n');
             }
             
             // ターン
             if (turnCard) {
-                memoText += `=== Turn ===\n`;
-                memoText += turnCard + '\n';
+                memoParts.push('=== Turn ===\n', turnCard, '\n');
                 if (actions.turn) {
-                    memoText += actions.turn + '\n';
+                    memoParts.push(actions.turn, '\n');
                 }
-                memoText += '\n';
+                memoParts.push('\n');
             }
             
             // リバー
             if (riverCard) {
-                memoText += `=== River ===\n`;
-                memoText += riverCard + '\n';
+                memoParts.push('=== River ===\n', riverCard, '\n');
                 if (actions.river) {
-                    memoText += actions.river + '\n';
+                    memoParts.push(actions.river, '\n');
                 }
-                memoText += '\n';
+                memoParts.push('\n');
             }
             
-            // メモ内容を追加
-            if (notes && notes.trim() !== '') {
-                memoText += `=== Notes ===\n`;
-                memoText += notes + '\n';
+            // メモ内容
+            if (values.notes.trim()) {
+                memoParts.push('=== Notes ===\n', values.notes, '\n');
             }
             
-            return memoText;
+            return memoParts.join('');
         }
 
-        // テキストメモ生成ボタンの機能
+        // テキストメモ生成ボタンの機能（最適化版）
         function setupTextMemoGeneration() {
             const generateButton = document.getElementById('generate-text-memo');
             const memoArea = document.getElementById('text-memo-area');
@@ -999,14 +1013,25 @@
             
             if (generateButton) {
                 generateButton.addEventListener('click', () => {
-                    const memoText = generateTextMemo();
-                    memoContent.textContent = memoText;
-                    memoArea.classList.remove('hidden');
+                    // ボタンを一時的に無効化して重複クリックを防止
+                    generateButton.disabled = true;
+                    generateButton.textContent = '生成中...';
+                    
+                    // 非同期でテキスト生成（UIブロックを防ぐ）
+                    setTimeout(() => {
+                        const memoText = generateTextMemo();
+                        memoContent.textContent = memoText;
+                        memoArea.classList.remove('hidden');
+                        
+                        // ボタンを復元
+                        generateButton.disabled = false;
+                        generateButton.textContent = 'テキストメモ生成';
+                    }, 0);
                 });
             }
         }
 
-        // コピー機能
+        // コピー機能（最適化版）
         function setupCopyFunction() {
             const copyButton = document.getElementById('copy-memo');
             
@@ -1015,20 +1040,30 @@
                     const memoContent = document.getElementById('text-memo-content');
                     const textToCopy = memoContent.textContent;
                     
+                    // ボタンを一時的に無効化
+                    copyButton.disabled = true;
+                    const originalText = copyButton.textContent;
+                    
                     try {
                         await navigator.clipboard.writeText(textToCopy);
                         copyButton.textContent = 'コピー完了！';
-                        copyButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                        copyButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                        copyButton.style.backgroundColor = '#059669';
                         
                         setTimeout(() => {
-                            copyButton.textContent = 'コピー';
-                            copyButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-                            copyButton.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                            copyButton.textContent = originalText;
+                            copyButton.style.backgroundColor = '';
+                            copyButton.disabled = false;
                         }, 2000);
                     } catch (err) {
                         console.error('コピーに失敗しました:', err);
-                        alert('コピーに失敗しました。手動でコピーしてください。');
+                        copyButton.textContent = 'コピー失敗';
+                        copyButton.style.backgroundColor = '#dc2626';
+                        
+                        setTimeout(() => {
+                            copyButton.textContent = originalText;
+                            copyButton.style.backgroundColor = '';
+                            copyButton.disabled = false;
+                        }, 2000);
                     }
                 });
             }
