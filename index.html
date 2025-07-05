@@ -320,6 +320,24 @@
             gap: 16px;
             margin-bottom: 1rem;
         }
+        @media (max-width: 600px) {
+            .button-row,
+            .memo-header-row {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            .button-row button,
+            .memo-header-row button {
+                width: 100%;
+                min-width: 0;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            .memo-header-row {
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
