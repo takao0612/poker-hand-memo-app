@@ -216,11 +216,12 @@
         /* コピー用ボタンも統一 */
         #copy-memo {
             min-width: 70px;
-            height: 38px;
-            line-height: 38px;
+            height: 32px;
+            line-height: 32px;
             white-space: nowrap;
             overflow: hidden;
             box-sizing: border-box;
+            font-size: 0.95rem;
         }
         /* セクション */
         .section {
@@ -231,10 +232,11 @@
         }
         
         .section-title {
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             margin-bottom: 1rem;
+            line-height: 1.2;
         }
         
         .section-content {
@@ -317,8 +319,14 @@
         .memo-header-row {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             margin-bottom: 1rem;
+        }
+        .memo-header-row .section-title {
+            margin-bottom: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.2;
         }
         @media (max-width: 600px) {
             .button-row,
