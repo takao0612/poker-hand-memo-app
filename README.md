@@ -36,4 +36,4 @@
 
 ## ライセンス
 
-MIT License 
+MIT License
