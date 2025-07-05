@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Hand Review Memo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムスタイルでより良い美観を実現 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* カードのプレースホルダーのスタイル */
+        .card-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 70px;
+            background-color: #374151; /* gray-700 */
+            border: 2px dashed #4B5563; /* gray-600 */
+            border-radius: 4px;
+            font-size: 2rem;
+            color: #6B7280; /* gray-500 */
+        }
+        /* 視覚的に選択されたカードのスタイル */
+        .card-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 70px;
+            background-color: #F9FAFB; /* gray-50 */
+            border: 1px solid #4B5563; /* gray-600 */
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            /* スプライトシートでカードを表示する場合の調整 */
+            background-size: cover; /* カードディスプレイもスプライトシート画像を使うなら */
+            background-repeat: no-repeat;
+        }
+
+        /* 新しく追加するカードスプライトのスタイル */
+        .card-sprite {
+            box-sizing: border-box; /* paddingやborderをwidth/heightに含める */
+            background-color: #374151; /* bg-gray-700 と同じ色 */
+            border: 1px solid #4B5563; /* border-gray-600 と同じ色 */
+            transition: border-color 0.2s ease-in-out; /* ホバー時の変化を滑らかに */
+        }
+
+        .card-sprite:hover:not(.selected):not(.disabled) {
+            border-color: #9333ea; /* hover:border-purple-600 と同じ色 */
+        }
+
+        /* 選択されたカードのスタイル */
+        .card-sprite.selected {
+            border-color: #a78bfa; /* purple-400 くらいの色で強調 */
+            box-shadow: 0 0 8px rgba(167, 139, 250, 0.7); /* 強めのシャドウ */
+            background-color: #4A008B; /* 少し暗めの紫で選択済みを強調 */
+        }
+
+        /* 無効化されたカードのスタイル */
+        .card-sprite.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(80%); /* グレースケールで視覚的に無効化 */
+            pointer-events: none; /* クリックイベントを無効化 */
+        }
+
+        /* カードグリッドを明示的に13列×4行の長方形に揃える */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(13, 44px);
+            grid-auto-rows: 64px;
+            gap: 4px;
+            justify-content: start;
+            align-items: start;
+        }
+        .card-sprite {
+            width: 44px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 0.02em;
+            color: #000; /* 文字色を黒に */
+            background: #fff; /* 背景色を白に */
+            border: 1px solid #4B5563;
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+        .card-sprite.heart, .card-sprite.diamond {
+            color: #ef4444; /* ハート・ダイヤは赤色 */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <header class="bg-purple-800 shadow-lg">
+        <h1 class="text-white text-center text-3xl font-bold p-4">Poker Hand Review Memo</h1>
+    </header>
+
+    <main class="p-4 sm:p-6 lg:p-8">
+        <div class="max-w-6xl mx-auto">
+
+            <div class="w-full bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h2 class="text-2xl font-semibold mb-6 border-b border-gray-600 pb-2">新規メモ作成</h2>
+
+                <form id="hand-memo-form" class="space-y-8">
+                    <div>
+                        <label for="hand-title" class="block text-sm font-medium text-gray-300 mb-1">ハンドタイトル</label>
+                        <input type="text" id="hand-title" name="hand-title" placeholder="例: アグレッシブなヴィランに対するブラフキャッチ" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Heroのポジション</label>
+                            <select id="hero-position" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500">
+                                <option value="">選択してください</option>
+                                <option value="UTG">UTG</option>
+                                <option value="UTG+1">UTG+1</option>
+                                <option value="MP">MP</option>
+                                <option value="MP+1">MP+1</option>
+                                <option value="HJ">HJ</option>
+                                <option value="CO">CO</option>
+                                <option value="BTN">BTN</option>
+                                <option value="SB">SB</option>
+                                <option value="BB">BB</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Villainのポジション</label>
+                            <select id="villain-position" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500">
+                                <option value="">選択してください</option>
+                                <option value="UTG">UTG</option>
+                                <option value="UTG+1">UTG+1</option>
+                                <option value="MP">MP</option>
+                                <option value="MP+1">MP+1</option>
+                                <option value="HJ">HJ</option>
+                                <option value="CO">CO</option>
+                                <option value="BTN">BTN</option>
+                                <option value="SB">SB</option>
+                                <option value="BB">BB</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- プリフロップ -->
+                        <details class="bg-gray-900/50 rounded-lg p-4">
+                            <summary class="font-semibold text-lg cursor-pointer">プリフロップ</summary>
+                            <div class="mt-4 space-y-4">
+                                <!-- Heroの手札選択 -->
+                                <div>
+                                    <h4 class="font-medium text-gray-300 mb-2">Heroの手札 (2枚選択)</h4>
+                                    <div class="flex gap-2 mb-4 h-[75px] items-center" id="hero-selected-cards-display">
+                                        <div class="card-display text-red-500">A♥</div>
+                                        <div class="card-display text-gray-900">K♠</div>
+                                    </div>
+                                    <div id="hero-card-grid" class="card-grid"></div>
+                                </div>
+                                
+                                <!-- プリフロップアクション -->
+                                <div id="preflop-action-section">
+                                    <!-- プリフロップアクションはJavaScriptで動的に生成 -->
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- フロップ -->
+                        <details class="bg-gray-900/50 rounded-lg p-4">
+                            <summary class="font-semibold text-lg cursor-pointer">フロップ</summary>
+                            <div class="mt-4 space-y-4">
+                                <!-- フロップカード選択 -->
+                                <div>
+                                    <h4 class="font-medium text-gray-300 mb-2">フロップカード (3枚選択)</h4>
+                                    <div class="flex gap-2 mb-4 h-[75px] items-center" id="flop-selected-cards-display">
+                                        <div class="card-display text-gray-900">Q♠</div>
+                                        <div class="card-display text-red-500">J♦</div>
+                                        <div class="card-display text-gray-900">2♣</div>
+                                    </div>
+                                    <div id="flop-card-grid" class="card-grid"></div>
+                                </div>
+                                
+                                <!-- フロップアクション -->
+                                <div id="flop-action-section">
+                                    <!-- フロップアクションはJavaScriptで動的に生成 -->
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- ターン -->
+                        <details class="bg-gray-900/50 rounded-lg p-4">
+                            <summary class="font-semibold text-lg cursor-pointer">ターン</summary>
+                            <div class="mt-4 space-y-4">
+                                <!-- ターンカード選択 -->
+                                <div>
+                                    <h4 class="font-medium text-gray-300 mb-2">ターンカード (1枚選択)</h4>
+                                    <div class="flex gap-2 mb-4 h-[75px] items-center" id="turn-selected-cards-display">
+                                        <div class="card-display text-gray-900">A♣</div>
+                                    </div>
+                                    <div id="turn-card-grid" class="card-grid"></div>
+                                </div>
+                                
+                                <!-- ターンアクション -->
+                                <div id="turn-action-section">
+                                    <!-- ターンアクションはJavaScriptで動的に生成 -->
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- リバー -->
+                        <details class="bg-gray-900/50 rounded-lg p-4">
+                            <summary class="font-semibold text-lg cursor-pointer">リバー</summary>
+                            <div class="mt-4 space-y-4">
+                                <!-- リバーカード選択 -->
+                                <div>
+                                    <h4 class="font-medium text-gray-300 mb-2">リバーカード (1枚選択)</h4>
+                                    <div class="flex gap-2 mb-4 h-[75px] items-center" id="river-selected-cards-display">
+                                        <div class="card-placeholder">?</div>
+                                    </div>
+                                    <div id="river-card-grid" class="card-grid"></div>
+                                </div>
+                                
+                                <!-- リバーアクション -->
+                                <div id="river-action-section">
+                                    <!-- リバーアクションはJavaScriptで動的に生成 -->
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-300 mb-1">メモ / 分析</label>
+                        <textarea id="notes" name="notes" rows="6" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500" placeholder="ハンドに関する詳細な考察、レンジ、プレイヤーの傾向など。"></textarea>
+                    </div>
+
+                    <div class="flex justify-center pt-4 border-t border-gray-700">
+                        <div class="flex gap-4">
+                            <button type="button" id="generate-text-memo" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md">テキストメモ生成</button>
+                            <button type="button" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md">クリア</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- テキストメモ表示エリア -->
+                <div id="text-memo-area" class="mt-6 bg-gray-900 rounded-lg border border-gray-700 p-4 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-200">生成されたテキストメモ</h3>
+                        <button id="copy-memo" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md text-sm">コピー</button>
+                    </div>
+                    <div id="text-memo-content" class="bg-gray-800 border border-gray-600 rounded-md p-4 font-mono text-sm text-gray-200 whitespace-pre-wrap max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // カードのスートとランクの定義
+        const SUITS = ['s', 'h', 'd', 'c']; // スペード、ハート、ダイヤ、クラブ
+        const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
+
+        // 各カードのデータ (スプライトシート上の位置情報も含む)
+        const ALL_CARDS = [];
+        const CARD_WIDTH = 71; // スプライトシート上の1枚あたりのカードの幅 (px)
+        const CARD_HEIGHT = 96; // スプライトシート上の1枚あたりのカードの高さ (px)
+
+        // スート記号のマッピング
+        const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
+
+        SUITS.forEach((suit, suitIndex) => {
+            RANKS.forEach((rank, rankIndex) => {
+                ALL_CARDS.push({
+                    id: rank + suit, // 例: 'As', 'Kh'
+                    rank: rank,
+                    suit: suit,
+                    // スプライトシート上の背景位置 (CSSの background-position 用)
+                    bgX: -rankIndex * CARD_WIDTH,
+                    bgY: -suitIndex * CARD_HEIGHT
+                });
+            });
+        });
+
+        console.log(ALL_CARDS); // コンソールで生成されたカードデータを確認できます
+
+        // カードの表示と選択に関連するHTML要素のID
+        const cardGridIds = {
+            hero: 'hero-card-grid',
+            flop: 'flop-card-grid',
+            turn: 'turn-card-grid',
+            river: 'river-card-grid'
+        };
+
+        const selectedCardsDisplayIds = {
+            hero: 'hero-selected-cards-display',
+            flop: 'flop-selected-cards-display',
+            turn: 'turn-selected-cards-display',
+            river: 'river-selected-cards-display'
+        };
+
+        // スプライトシートの画像パス
+        const SPRITESHEET_PATH = null; // 画像なしでテキスト表示
+
+        // カード選択のロジック
+        const SELECTION_LIMITS = {
+            hero: 2,    // Heroの手札は2枚
+            flop: 3,    // フロップは3枚
+            turn: 1,    // ターンは1枚
+            river: 1    // リバーは1枚
+        };
+
+        // 選択されたカードを管理するオブジェクト
+        const selectedCards = {
+            hero: [],
+            flop: [],
+            turn: [],
+            river: []
+        };
+
+        // アクションシーケンスの定義
+        const actionSequences = [
+            { id: 'preflop', label: 'プリフロップ' },
+            { id: 'flop', label: 'フロップ' },
+            { id: 'turn', label: 'ターン' },
+            { id: 'river', label: 'リバー' }
+        ];
+
+        // ポジションの順序を定義（浅い順）
+        const POSITION_ORDER = ['UTG', 'UTG+1', 'MP', 'MP+1', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+
+        // ポジションが浅い方（早い方）を判定する関数
+        function getEarlierPosition(pos1, pos2) {
+            const index1 = POSITION_ORDER.indexOf(pos1);
+            const index2 = POSITION_ORDER.indexOf(pos2);
+            return index1 <= index2 ? pos1 : pos2;
+        }
+
+        // プリフロップ用の入力フィールドを追加
+        function addPreflopInputs() {
+            const container = document.getElementById('preflop-action-section');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">オープンサイズ</label>
+                    <input type="number" id="open-size" placeholder="例: 4" min="0" step="0.1" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">アクション</label>
+                    <div class="flex gap-2 mb-2">
+                        <button type="button" class="action-actor px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md text-sm" data-actor="H">Hero</button>
+                        <button type="button" class="action-actor px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md text-sm" data-actor="V">Villain</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">X</button>
+                        <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">C</button>
+                        <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">B</button>
+                        <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">R</button>
+                        <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">F</button>
+                    </div>
+                    <textarea id="preflop-action" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 text-sm" placeholder="プリフロップのアクションを入力してください..."></textarea>
+                </div>
+            `;
+        }
+
+        // アクションシーケンスを動的に生成する関数
+        function generateActionSequences() {
+            // フロップ、ターン、リバーのアクションを生成
+            actionSequences.filter(sequence => sequence.id !== 'preflop').forEach(sequence => {
+                const container = document.getElementById(`${sequence.id}-action-section`);
+                if (!container) return;
+
+                container.innerHTML = `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">アクション</label>
+                        <div class="flex gap-2 mb-2">
+                            <button type="button" class="action-actor px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md text-sm" data-actor="H">Hero</button>
+                            <button type="button" class="action-actor px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md text-sm" data-actor="V">Villain</button>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">X</button>
+                            <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">C</button>
+                            <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">B</button>
+                            <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">R</button>
+                            <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">F</button>
+                        </div>
+                        <textarea id="${sequence.id}-action" name="${sequence.id}-action" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 text-sm" placeholder="${sequence.label}のアクションを入力してください..."></textarea>
+                    </div>
+                `;
+            });
+        }
+
+        // カードをクリックして選択する関数
+        function handleCardClick(cardId, section) {
+            const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+            const isSelected = cardElement.classList.contains('selected');
+            
+            // 選択制限をチェック
+            if (!isSelected && selectedCards[section].length >= SELECTION_LIMITS[section]) {
+                alert(`${section}は最大${SELECTION_LIMITS[section]}枚まで選択できます`);
+                return;
+            }
+
+            if (isSelected) {
+                // カードの選択を解除
+                cardElement.classList.remove('selected');
+                selectedCards[section] = selectedCards[section].filter(id => id !== cardId);
+            } else {
+                // カードを選択
+                cardElement.classList.add('selected');
+                selectedCards[section].push(cardId);
+            }
+
+            // 選択されたカードの表示を更新
+            updateSelectedCardsDisplay(section);
+            
+            // 他のセクションで選択されたカードを無効化/有効化
+            updateCardAvailability();
+        }
+
+        // 選択されたカードの表示を更新する関数
+        function updateSelectedCardsDisplay(section) {
+            const displayElement = document.getElementById(selectedCardsDisplayIds[section]);
+            if (!displayElement) return;
+
+            displayElement.innerHTML = '';
+
+            selectedCards[section].forEach(cardId => {
+                const card = ALL_CARDS.find(c => c.id === cardId);
+                if (card) {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.classList.add('card-display');
+                    cardDiv.style.color = (card.suit === 'h' || card.suit === 'd') ? '#ef4444' : '#000';
+                    cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
+                    displayElement.appendChild(cardDiv);
+                }
+            });
+
+            // プレースホルダーを追加（選択可能な枚数まで）
+            const remainingSlots = SELECTION_LIMITS[section] - selectedCards[section].length;
+            for (let i = 0; i < remainingSlots; i++) {
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.classList.add('card-placeholder');
+                placeholderDiv.textContent = '?';
+                displayElement.appendChild(placeholderDiv);
+            }
+        }
+
+        // カードの選択可能性を更新する関数
+        function updateCardAvailability() {
+            // すべての選択されたカードのIDを取得
+            const allSelectedCardIds = [
+                ...selectedCards.hero,
+                ...selectedCards.flop,
+                ...selectedCards.turn,
+                ...selectedCards.river
+            ];
+
+            // すべてのカード要素を取得
+            const allCardElements = document.querySelectorAll('.card-sprite');
+            
+            allCardElements.forEach(cardElement => {
+                const cardId = cardElement.dataset.cardId;
+                const isSelected = allSelectedCardIds.includes(cardId);
+                
+                if (isSelected) {
+                    cardElement.classList.add('disabled');
+                } else {
+                    cardElement.classList.remove('disabled');
+                }
+            });
+        }
+
+        // カードを生成して指定されたグリッドに追加する関数
+        function renderCardGrid(gridElementId) {
+            const gridElement = document.getElementById(gridElementId);
+            if (!gridElement) {
+                console.error(`Grid element with ID ${gridElementId} not found.`);
+                return;
+            }
+
+            gridElement.innerHTML = '';
+
+            // セクション名を取得（gridElementIdから）
+            const section = Object.keys(cardGridIds).find(key => cardGridIds[key] === gridElementId);
+
+            ALL_CARDS.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('card-sprite');
+                cardDiv.dataset.cardId = card.id;
+
+                // スートごとにクラスを追加
+                if (card.suit === 'h') cardDiv.classList.add('heart');
+                if (card.suit === 'd') cardDiv.classList.add('diamond');
+
+                cardDiv.style.width = '44px';
+                cardDiv.style.height = '64px';
+                cardDiv.style.display = 'flex';
+                cardDiv.style.alignItems = 'center';
+                cardDiv.style.justifyContent = 'center';
+                cardDiv.style.fontSize = '1.3rem';
+                cardDiv.style.fontWeight = 'bold';
+                cardDiv.style.letterSpacing = '0.02em';
+                cardDiv.style.color = (card.suit === 'h' || card.suit === 'd') ? '#ef4444' : '#000';
+                cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
+
+                // クリックイベントを追加
+                cardDiv.addEventListener('click', () => {
+                    if (!cardDiv.classList.contains('disabled')) {
+                        handleCardClick(card.id, section);
+                    }
+                });
+
+                // ホバー・選択・無効化のスタイルは既存のまま
+                cardDiv.addEventListener('mouseenter', () => {
+                    if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
+                        cardDiv.style.borderColor = '#9333ea';
+                    }
+                });
+                cardDiv.addEventListener('mouseleave', () => {
+                    if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
+                        cardDiv.style.borderColor = 'transparent';
+                    }
+                });
+
+                gridElement.appendChild(cardDiv);
+            });
+        }
+
+        // アクションボタンの機能
+        function setupActionButtons() {
+            // 動的に生成されたボタンにイベントリスナーを追加
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('button[type="button"]')) {
+                    const button = e.target;
+                    const buttonText = button.textContent.trim();
+                    
+                    // アクションボタン（X, C, B, R, F）のみを対象にする
+                    if (['X', 'C', 'B', 'R', 'F'].includes(buttonText)) {
+                        e.preventDefault();
+                        
+                        const actionText = buttonText;
+                        // ボタンから適切なtextareaを探す
+                        let inputField = null;
+                        
+                        // まず、ボタンが含まれるアクションセクションを探す
+                        const actionSection = button.closest('[id$="-action-section"]');
+                        if (actionSection) {
+                            // アクションセクション内のtextareaを探す
+                            inputField = actionSection.querySelector('textarea');
+                        }
+                        
+                        // 見つからない場合は、ボタンの親要素から再帰的に探す
+                        if (!inputField) {
+                            let parent = button.parentElement;
+                            while (parent && !inputField) {
+                                inputField = parent.querySelector('textarea');
+                                parent = parent.parentElement;
+                            }
+                        }
+                        
+                        if (inputField) {
+                            // BとRの場合はサイズ入力を求める
+                            if (button.classList.contains('action-with-size')) {
+                                const size = prompt(`${actionText}のサイズを入力してください（例: 50）`);
+                                if (size !== null && size.trim() !== '') {
+                                    const currentValue = inputField.value;
+                                    
+                                    // プリフロップのRの場合はBB表記、それ以外は%表記
+                                    let sizeWithUnit;
+                                    if (actionText === 'R' && inputField.id === 'preflop-action') {
+                                        sizeWithUnit = size.includes('bb') ? size : size + 'bb';
+                                    } else {
+                                        sizeWithUnit = size.includes('%') ? size : size + '%';
+                                    }
+                                    
+                                    // Hero: または Villain: の後にアクションを追加する場合
+                                    if (currentValue.endsWith('Hero: ') || currentValue.endsWith('Villain: ')) {
+                                        const newValue = currentValue + actionText + sizeWithUnit;
+                                        inputField.value = newValue;
+                                    } else {
+                                        // 既存の値がある場合はカンマを追加
+                                        const separator = currentValue ? ', ' : '';
+                                        const newValue = currentValue + separator + actionText + sizeWithUnit;
+                                        inputField.value = newValue;
+                                    }
+                                    inputField.focus();
+                                }
+                            } else {
+                                // 通常のアクション（X, C, F）
+                                const currentValue = inputField.value;
+                                
+                                // Hero: または Villain: の後にアクションを追加する場合
+                                if (currentValue.endsWith('Hero: ') || currentValue.endsWith('Villain: ')) {
+                                    const newValue = currentValue + actionText;
+                                    inputField.value = newValue;
+                                } else {
+                                    // 既存の値がある場合はカンマを追加
+                                    const separator = currentValue ? ', ' : '';
+                                    const newValue = currentValue + separator + actionText;
+                                    inputField.value = newValue;
+                                }
+                                inputField.focus();
+                            }
+                        } else {
+                            console.error('textareaが見つかりませんでした');
+                        }
+                    }
+                }
+            });
+        }
+
+        // アクション主体ボタンの機能
+        function setupActionActorButtons() {
+            // 動的に生成されたボタンにイベントリスナーを追加
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('.action-actor')) {
+                    e.preventDefault();
+                    
+                    const button = e.target;
+                    const actor = button.dataset.actor; // H または V
+                    
+                    // ボタンから適切なtextareaを探す
+                    let inputField = null;
+                    
+                    // まず、ボタンが含まれるアクションセクションを探す
+                    const actionSection = button.closest('[id$="-action-section"]');
+                    if (actionSection) {
+                        // アクションセクション内のtextareaを探す
+                        inputField = actionSection.querySelector('textarea');
+                    }
+                    
+                    // 見つからない場合は、ボタンの親要素から再帰的に探す
+                    if (!inputField) {
+                        let parent = button.parentElement;
+                        while (parent && !inputField) {
+                            inputField = parent.querySelector('textarea');
+                            parent = parent.parentElement;
+                        }
+                    }
+                    
+                    if (inputField) {
+                        const currentValue = inputField.value;
+                        const actorText = actor === 'H' ? 'Hero' : 'Villain';
+                        
+                        // 既存の値がある場合は改行を追加
+                        const separator = currentValue ? '\n' : '';
+                        const newValue = currentValue + separator + actorText + ': ';
+                        inputField.value = newValue;
+                        inputField.focus();
+                    } else {
+                        console.error('textareaが見つかりませんでした');
+                    }
+                }
+            });
+        }
+
+        // フォームのクリア機能
+        function setupClearButton() {
+            const clearButtons = document.querySelectorAll('button[type="button"]');
+            clearButtons.forEach(button => {
+                if (button.textContent === 'クリア') {
+                    button.addEventListener('click', () => {
+                        if (confirm('すべての入力内容をクリアしますか？')) {
+                            clearAllData();
+                        }
+                    });
+                }
+            });
+        }
+
+        // すべてのデータをクリアする関数
+        function clearAllData() {
+            // 選択されたカードをクリア
+            Object.keys(selectedCards).forEach(section => {
+                selectedCards[section] = [];
+                updateSelectedCardsDisplay(section);
+            });
+            
+            // カードの選択状態をリセット
+            document.querySelectorAll('.card-sprite').forEach(card => {
+                card.classList.remove('selected', 'disabled');
+            });
+            
+            // 入力フィールドをクリア
+            document.getElementById('hand-title').value = '';
+            actionSequences.forEach(sequence => {
+                const element = document.getElementById(`${sequence.id}-action`);
+                if (element) {
+                    element.value = '';
+                }
+            });
+            document.getElementById('notes').value = '';
+            document.getElementById('hero-position').value = '';
+            document.getElementById('villain-position').value = '';
+            
+            // カードの選択可能性を更新
+            updateCardAvailability();
+        }
+
+
+
+        // カードIDから表示用テキストに変換する関数
+        function getCardDisplayText(cardId) {
+            const card = ALL_CARDS.find(c => c.id === cardId);
+            if (card) {
+                return `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
+            }
+            return cardId;
+        }
+
+        // テキストメモ用の新しい表記関数（アルファベット表記）
+        function getCardTextMemoText(cardId) {
+            const card = ALL_CARDS.find(c => c.id === cardId);
+            if (card) {
+                const textSymbols = { s: 's', h: 'h', d: 'd', c: 'k' };
+                return `${card.rank}${textSymbols[card.suit]}`;
+            }
+            return cardId;
+        }
+
+        // テキストメモを生成する関数
+        function generateTextMemo() {
+            const handTitle = document.getElementById('hand-title').value;
+            const heroPosition = document.getElementById('hero-position').value;
+            const villainPosition = document.getElementById('villain-position').value;
+            const heroCards = selectedCards.hero.map(getCardTextMemoText).join('');
+            const flopCards = selectedCards.flop.map(getCardTextMemoText).join('');
+            const turnCard = selectedCards.turn.length > 0 ? getCardTextMemoText(selectedCards.turn[0]) : '';
+            const riverCard = selectedCards.river.length > 0 ? getCardTextMemoText(selectedCards.river[0]) : '';
+            
+            // プリフロップ用の入力値を取得
+            const openSize = document.getElementById('open-size')?.value || '';
+            const preflopAction = document.getElementById('preflop-action')?.value || '';
+            
+            // メモ内容を取得
+            const notes = document.getElementById('notes')?.value || '';
+            
+            // アクションシーケンスの値を取得
+            const actions = {};
+            actionSequences.forEach(sequence => {
+                const element = document.getElementById(`${sequence.id}-action`);
+                if (element) {
+                    actions[sequence.id] = element.value;
+                }
+            });
+            
+            let memoText = '';
+            
+            // ハンドタイトルが入力されている場合のみ追加
+            if (handTitle && handTitle.trim() !== '') {
+                memoText += `${handTitle}\n\n`;
+            }
+            
+            // ポジション情報を最初に追加
+            if (heroPosition && villainPosition) {
+                memoText += `Hero: ${heroPosition}, Villain: ${villainPosition}\n\n`;
+            }
+            
+            // プリフロップ
+            if (heroCards || openSize || preflopAction) {
+                memoText += `=== Preflop ===\n`;
+                
+                // Heroのハンドが選択されている場合は表示
+                if (heroCards) {
+                    memoText += `Hero ${heroCards}\n`;
+                }
+                
+                // オープンサイズがある場合
+                if (openSize) {
+                    // ポジションが浅い方を判定
+                    const earlierPosition = getEarlierPosition(heroPosition, villainPosition);
+                    
+                    // 数字に自動でbbを付ける
+                    const sizeWithBb = openSize.includes('bb') ? openSize : openSize + 'bb';
+                    
+                    // 浅い方のポジションにオープンサイズを紐づけ
+                    if (earlierPosition === heroPosition) {
+                        memoText += `${heroPosition} ${sizeWithBb}\n`;
+                    } else {
+                        memoText += `${villainPosition} ${sizeWithBb}\n`;
+                    }
+                }
+                
+                // プリフロップのアクションを表示
+                if (preflopAction) {
+                    memoText += preflopAction + '\n';
+                }
+                memoText += '\n';
+            }
+            
+            // フロップ
+            if (flopCards) {
+                memoText += `=== Flop ===\n`;
+                memoText += flopCards + '\n';
+                if (actions.flop) {
+                    memoText += actions.flop + '\n';
+                }
+                memoText += '\n';
+            }
+            
+            // ターン
+            if (turnCard) {
+                memoText += `=== Turn ===\n`;
+                memoText += turnCard + '\n';
+                if (actions.turn) {
+                    memoText += actions.turn + '\n';
+                }
+                memoText += '\n';
+            }
+            
+            // リバー
+            if (riverCard) {
+                memoText += `=== River ===\n`;
+                memoText += riverCard + '\n';
+                if (actions.river) {
+                    memoText += actions.river + '\n';
+                }
+                memoText += '\n';
+            }
+            
+            // メモ内容を追加
+            if (notes && notes.trim() !== '') {
+                memoText += `=== Notes ===\n`;
+                memoText += notes + '\n';
+            }
+            
+            return memoText;
+        }
+
+        // テキストメモ生成ボタンの機能
+        function setupTextMemoGeneration() {
+            const generateButton = document.getElementById('generate-text-memo');
+            const memoArea = document.getElementById('text-memo-area');
+            const memoContent = document.getElementById('text-memo-content');
+            
+            if (generateButton) {
+                generateButton.addEventListener('click', () => {
+                    const memoText = generateTextMemo();
+                    memoContent.textContent = memoText;
+                    memoArea.classList.remove('hidden');
+                });
+            }
+        }
+
+        // コピー機能
+        function setupCopyFunction() {
+            const copyButton = document.getElementById('copy-memo');
+            
+            if (copyButton) {
+                copyButton.addEventListener('click', async () => {
+                    const memoContent = document.getElementById('text-memo-content');
+                    const textToCopy = memoContent.textContent;
+                    
+                    try {
+                        await navigator.clipboard.writeText(textToCopy);
+                        copyButton.textContent = 'コピー完了！';
+                        copyButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                        copyButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                        
+                        setTimeout(() => {
+                            copyButton.textContent = 'コピー';
+                            copyButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+                            copyButton.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                        }, 2000);
+                    } catch (err) {
+                        console.error('コピーに失敗しました:', err);
+                        alert('コピーに失敗しました。手動でコピーしてください。');
+                    }
+                });
+            }
+        }
+
+
+
+        // ページロード時にカードグリッドをレンダリング
+        document.addEventListener('DOMContentLoaded', () => {
+            // プリフロップ入力フィールドを追加
+            addPreflopInputs();
+            
+            // アクションシーケンスを生成
+            generateActionSequences();
+            
+            // Heroの手札用グリッドをレンダリング
+            renderCardGrid(cardGridIds.hero);
+            // フロップ用グリッドをレンダリング
+            renderCardGrid(cardGridIds.flop);
+            // ターン用グリッドをレンダリング
+            renderCardGrid(cardGridIds.turn);
+            // リバー用グリッドをレンダリング
+            renderCardGrid(cardGridIds.river);
+
+            // 初期表示を設定
+            Object.keys(selectedCardsDisplayIds).forEach(section => {
+                updateSelectedCardsDisplay(section);
+            });
+
+            // アクションボタンの設定
+            setupActionButtons();
+            
+            // アクション主体ボタンの設定
+            setupActionActorButtons();
+            
+            // クリアボタンの設定
+            setupClearButton();
+            
+
+            
+            // テキストメモ生成の設定
+            setupTextMemoGeneration();
+            
+            // コピー機能の設定
+            setupCopyFunction();
+        });
+    </script>
+</body>
+</html>
