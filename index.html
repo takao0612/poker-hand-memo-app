@@ -4,43 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker Hand Review Memo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* カスタムスタイルでより良い美観を実現 */
+        /* 最適化されたカスタムCSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111827;
+            color: #e5e7eb;
+            line-height: 1.6;
         }
-        /* カードのプレースホルダーのスタイル */
+        
+        /* レイアウト */
+        .container {
+            max-width: 72rem;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .container { padding: 1.5rem; }
+        }
+        
+        @media (min-width: 1024px) {
+            .container { padding: 2rem; }
+        }
+        
+        /* ヘッダー */
+        header {
+            background-color: #6b21a8;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            color: white;
+            text-align: center;
+            font-size: 1.875rem;
+            font-weight: bold;
+            padding: 1rem;
+        }
+        
+        /* メインコンテンツ */
+        main {
+            padding: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            main { padding: 1.5rem; }
+        }
+        
+        @media (min-width: 1024px) {
+            main { padding: 2rem; }
+        }
+        
+        /* カード */
         .card-placeholder {
             display: flex;
             align-items: center;
             justify-content: center;
             width: 50px;
             height: 70px;
-            background-color: #374151; /* gray-700 */
-            border: 2px dashed #4B5563; /* gray-600 */
+            background-color: #374151;
+            border: 2px dashed #4B5563;
             border-radius: 4px;
             font-size: 2rem;
-            color: #6B7280; /* gray-500 */
+            color: #6B7280;
         }
-        /* 視覚的に選択されたカードのスタイル */
+        
         .card-display {
             display: flex;
             align-items: center;
             justify-content: center;
             width: 50px;
             height: 70px;
-            background-color: #F9FAFB; /* gray-50 */
-            border: 1px solid #4B5563; /* gray-600 */
+            background-color: #F9FAFB;
+            border: 1px solid #4B5563;
             border-radius: 4px;
             font-weight: bold;
             font-size: 1.2rem;
-            /* スプライトシートでカードを表示する場合の調整 */
-            background-size: cover; /* カードディスプレイもスプライトシート画像を使うなら */
-            background-repeat: no-repeat;
         }
-
-        /* 新しく追加するカードスプライトのスタイル */
+        
         .card-sprite {
             width: 40px;
             height: 63px;
@@ -56,28 +103,30 @@
             border-radius: 4px;
             transition: border-color 0.2s;
             box-sizing: border-box;
+            cursor: pointer;
         }
-
+        
         .card-sprite:hover:not(.selected):not(.disabled) {
             border-color: #9333ea;
         }
-
-        /* 選択されたカードのスタイル */
+        
         .card-sprite.selected {
             border-color: #a78bfa;
             box-shadow: 0 0 8px rgba(167, 139, 250, 0.7);
             background-color: #4A008B;
         }
-
-        /* 無効化されたカードのスタイル */
+        
         .card-sprite.disabled {
             opacity: 0.3;
             cursor: not-allowed;
             filter: grayscale(80%);
             pointer-events: none;
         }
-
-        /* カードグリッドを明示的に13列×4行の長方形に揃える */
+        
+        .card-sprite.heart, .card-sprite.diamond {
+            color: #ef4444;
+        }
+        
         .card-grid {
             display: grid;
             grid-template-columns: repeat(13, 1fr);
@@ -87,34 +136,196 @@
             align-items: start;
         }
         
-        .card-sprite.heart, .card-sprite.diamond {
-            color: #ef4444; /* ハート・ダイヤは赤色 */
+        /* フォーム要素 */
+        .form-group {
+            margin-bottom: 2rem;
         }
-
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #d1d5db;
+            margin-bottom: 0.25rem;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            color: #e5e7eb;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        /* グリッドレイアウト */
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        /* ボタン */
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: #a855f7;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #9333ea;
+        }
+        
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        /* セクション */
+        .section {
+            background-color: rgba(17, 24, 39, 0.5);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+        
+        .section-content {
+            margin-top: 1rem;
+        }
+        
+        /* アクションボタン */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .action-btn {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #4B5563;
+            background-color: #374151;
+            color: #e5e7eb;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        
+        .action-btn:hover {
+            background-color: #4B5563;
+        }
+        
+        .action-actor {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #4B5563;
+            background-color: #374151;
+            color: #e5e7eb;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        
+        .action-actor:hover {
+            background-color: #4B5563;
+        }
+        
+        /* ユーティリティ */
+        .space-y-6 > * + * {
+            margin-top: 1.5rem;
+        }
+        
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+        
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        
+        .flex { display: flex; }
+        .gap-2 { gap: 0.5rem; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        
+        .h-\[75px\] { height: 75px; }
+        
+        /* レスポンシブ */
+        @media (max-width: 600px) {
+            .card-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
+<body>
 
-    <header class="bg-purple-800 shadow-lg">
-        <h1 class="text-white text-center text-3xl font-bold p-4">Poker Hand Review Memo</h1>
+    <header>
+        <h1>Poker Hand Review Memo</h1>
     </header>
 
-    <main class="p-4 sm:p-6 lg:p-8">
-        <div class="max-w-6xl mx-auto">
+    <main>
+        <div class="container">
 
-            <div class="w-full bg-gray-800 p-6 rounded-lg border border-gray-700">
-                <h2 class="text-2xl font-semibold mb-6 border-b border-gray-600 pb-2">新規メモ作成</h2>
+            <div class="section">
+                <h2 class="section-title">新規メモ作成</h2>
 
-                <form id="hand-memo-form" class="space-y-8">
-                    <div>
-                        <label for="hand-title" class="block text-sm font-medium text-gray-300 mb-1">ハンドタイトル</label>
-                        <input type="text" id="hand-title" name="hand-title" placeholder="例: アグレッシブなヴィランに対するブラフキャッチ" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                <form id="hand-memo-form" class="space-y-6">
+                    <div class="form-group">
+                        <label for="hand-title" class="form-label">ハンドタイトル</label>
+                        <input type="text" id="hand-title" name="hand-title" placeholder="例: アグレッシブなヴィランに対するブラフキャッチ" class="form-input">
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Heroのポジション</label>
-                            <select id="hero-position" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500">
+                    <div class="grid grid-cols-1 md:grid-cols-2">
+                        <div class="form-group">
+                            <label class="form-label">Heroのポジション</label>
+                            <select id="hero-position" class="form-select">
                                 <option value="">選択してください</option>
                                 <option value="UTG">UTG</option>
                                 <option value="UTG+1">UTG+1</option>
@@ -127,9 +338,9 @@
                                 <option value="BB">BB</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Villainのポジション</label>
-                            <select id="villain-position" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500">
+                        <div class="form-group">
+                            <label class="form-label">Villainのポジション</label>
+                            <select id="villain-position" class="form-select">
                                 <option value="">選択してください</option>
                                 <option value="UTG">UTG</option>
                                 <option value="UTG+1">UTG+1</option>
@@ -146,17 +357,17 @@
 
                     <div class="space-y-6">
                         <!-- プリフロップ -->
-                        <details class="bg-gray-900/50 rounded-lg p-4">
-                            <summary class="font-semibold text-lg cursor-pointer">プリフロップ</summary>
-                            <div class="mt-4 space-y-4">
+                        <details class="section">
+                            <summary class="section-title">プリフロップ</summary>
+                            <div class="section-content">
                                 <!-- Heroの手札選択 -->
                                 <div>
-                                    <h4 class="font-medium text-gray-300 mb-2">Heroの手札 (2枚選択)</h4>
+                                    <h4 class="form-label">Heroの手札 (2枚選択)</h4>
                                     <div class="flex gap-2 mb-4 h-[75px] items-center" id="hero-selected-cards-display">
-                                        <div class="card-display text-red-500">A♥</div>
-                                        <div class="card-display text-gray-900">K♠</div>
+                                        <div class="card-display" style="color: #ef4444;">A♥</div>
+                                        <div class="card-display" style="color: #000;">K♠</div>
                                     </div>
-                                    <div id="hero-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
+                                    <div id="hero-card-grid" class="card-grid"></div>
                                 </div>
                                 
                                 <!-- プリフロップアクション -->
@@ -167,18 +378,18 @@
                         </details>
 
                         <!-- フロップ -->
-                        <details class="bg-gray-900/50 rounded-lg p-4">
-                            <summary class="font-semibold text-lg cursor-pointer">フロップ</summary>
-                            <div class="mt-4 space-y-4">
+                        <details class="section">
+                            <summary class="section-title">フロップ</summary>
+                            <div class="section-content">
                                 <!-- フロップカード選択 -->
                                 <div>
-                                    <h4 class="font-medium text-gray-300 mb-2">フロップカード (3枚選択)</h4>
+                                    <h4 class="form-label">フロップカード (3枚選択)</h4>
                                     <div class="flex gap-2 mb-4 h-[75px] items-center" id="flop-selected-cards-display">
-                                        <div class="card-display text-gray-900">Q♠</div>
-                                        <div class="card-display text-red-500">J♦</div>
-                                        <div class="card-display text-gray-900">2♣</div>
+                                        <div class="card-display" style="color: #000;">Q♠</div>
+                                        <div class="card-display" style="color: #ef4444;">J♦</div>
+                                        <div class="card-display" style="color: #000;">2♣</div>
                                     </div>
-                                    <div id="flop-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
+                                    <div id="flop-card-grid" class="card-grid"></div>
                                 </div>
                                 
                                 <!-- フロップアクション -->
@@ -189,16 +400,16 @@
                         </details>
 
                         <!-- ターン -->
-                        <details class="bg-gray-900/50 rounded-lg p-4">
-                            <summary class="font-semibold text-lg cursor-pointer">ターン</summary>
-                            <div class="mt-4 space-y-4">
+                        <details class="section">
+                            <summary class="section-title">ターン</summary>
+                            <div class="section-content">
                                 <!-- ターンカード選択 -->
                                 <div>
-                                    <h4 class="font-medium text-gray-300 mb-2">ターンカード (1枚選択)</h4>
+                                    <h4 class="form-label">ターンカード (1枚選択)</h4>
                                     <div class="flex gap-2 mb-4 h-[75px] items-center" id="turn-selected-cards-display">
-                                        <div class="card-display text-gray-900">A♣</div>
+                                        <div class="card-display" style="color: #000;">A♣</div>
                                     </div>
-                                    <div id="turn-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
+                                    <div id="turn-card-grid" class="card-grid"></div>
                                 </div>
                                 
                                 <!-- ターンアクション -->
@@ -209,16 +420,16 @@
                         </details>
 
                         <!-- リバー -->
-                        <details class="bg-gray-900/50 rounded-lg p-4">
-                            <summary class="font-semibold text-lg cursor-pointer">リバー</summary>
-                            <div class="mt-4 space-y-4">
+                        <details class="section">
+                            <summary class="section-title">リバー</summary>
+                            <div class="section-content">
                                 <!-- リバーカード選択 -->
                                 <div>
-                                    <h4 class="font-medium text-gray-300 mb-2">リバーカード (1枚選択)</h4>
+                                    <h4 class="form-label">リバーカード (1枚選択)</h4>
                                     <div class="flex gap-2 mb-4 h-[75px] items-center" id="river-selected-cards-display">
                                         <div class="card-placeholder">?</div>
                                     </div>
-                                    <div id="river-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
+                                    <div id="river-card-grid" class="card-grid"></div>
                                 </div>
                                 
                                 <!-- リバーアクション -->
@@ -229,26 +440,26 @@
                         </details>
                     </div>
 
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-300 mb-1">メモ / 分析</label>
-                        <textarea id="notes" name="notes" rows="6" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500" placeholder="ハンドに関する詳細な考察、レンジ、プレイヤーの傾向など。"></textarea>
+                    <div class="form-group">
+                        <label for="notes" class="form-label">メモ / 分析</label>
+                        <textarea id="notes" name="notes" rows="6" class="form-textarea" placeholder="ハンドに関する詳細な考察、レンジ、プレイヤーの傾向など。"></textarea>
                     </div>
 
                     <div class="flex justify-center pt-4 border-t border-gray-700">
                         <div class="flex gap-4">
-                            <button type="button" id="generate-text-memo" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md">テキストメモ生成</button>
-                            <button type="button" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md">クリア</button>
+                            <button type="button" id="generate-text-memo" class="btn btn-primary">テキストメモ生成</button>
+                            <button type="button" class="btn btn-secondary">クリア</button>
                         </div>
                     </div>
                 </form>
 
                 <!-- テキストメモ表示エリア -->
-                <div id="text-memo-area" class="mt-6 bg-gray-900 rounded-lg border border-gray-700 p-4 hidden">
+                <div id="text-memo-area" class="section hidden">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-200">生成されたテキストメモ</h3>
-                        <button id="copy-memo" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md text-sm">コピー</button>
+                        <h3 class="section-title">生成されたテキストメモ</h3>
+                        <button id="copy-memo" class="btn btn-primary btn-sm">コピー</button>
                     </div>
-                    <div id="text-memo-content" class="bg-gray-800 border border-gray-600 rounded-md p-4 font-mono text-sm text-gray-200 whitespace-pre-wrap max-h-96 overflow-y-auto"></div>
+                    <div id="text-memo-content" class="form-textarea font-mono text-sm whitespace-pre-wrap max-h-96 overflow-y-auto"></div>
                 </div>
             </div>
         </div>
@@ -340,24 +551,24 @@
             if (!container) return;
 
             container.innerHTML = `
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">オープンサイズ</label>
-                    <input type="number" id="open-size" placeholder="例: 4" min="0" step="0.1" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 text-sm">
+                <div class="form-group">
+                    <label class="form-label">オープンサイズ</label>
+                    <input type="number" id="open-size" placeholder="例: 4" min="0" step="0.1" class="form-input">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">アクション</label>
-                    <div class="flex gap-2 mb-2">
-                        <button type="button" class="action-actor px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md text-sm" data-actor="H">Hero</button>
-                        <button type="button" class="action-actor px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md text-sm" data-actor="V">Villain</button>
+                <div class="form-group">
+                    <label class="form-label">アクション</label>
+                    <div class="action-buttons">
+                        <button type="button" class="action-actor" data-actor="H">Hero</button>
+                        <button type="button" class="action-actor" data-actor="V">Villain</button>
                     </div>
-                    <div class="flex flex-wrap gap-2 mb-2">
-                        <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">X</button>
-                        <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">C</button>
-                        <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">B</button>
-                        <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">R</button>
-                        <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">F</button>
+                    <div class="action-buttons">
+                        <button type="button" class="action-btn">X</button>
+                        <button type="button" class="action-btn">C</button>
+                        <button type="button" class="action-btn action-with-size">B</button>
+                        <button type="button" class="action-btn action-with-size">R</button>
+                        <button type="button" class="action-btn">F</button>
                     </div>
-                    <textarea id="preflop-action" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 text-sm" placeholder="プリフロップのアクションを入力してください..."></textarea>
+                    <textarea id="preflop-action" rows="3" class="form-textarea" placeholder="プリフロップのアクションを入力してください..."></textarea>
                 </div>
             `;
         }
@@ -370,20 +581,20 @@
                 if (!container) return;
 
                 container.innerHTML = `
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-1">アクション</label>
-                        <div class="flex gap-2 mb-2">
-                            <button type="button" class="action-actor px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md text-sm" data-actor="H">Hero</button>
-                            <button type="button" class="action-actor px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md text-sm" data-actor="V">Villain</button>
+                    <div class="form-group">
+                        <label class="form-label">アクション</label>
+                        <div class="action-buttons">
+                            <button type="button" class="action-actor" data-actor="H">Hero</button>
+                            <button type="button" class="action-actor" data-actor="V">Villain</button>
                         </div>
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">X</button>
-                            <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">C</button>
-                            <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">B</button>
-                            <button type="button" class="action-with-size px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">R</button>
-                            <button type="button" class="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md text-sm">F</button>
+                        <div class="action-buttons">
+                            <button type="button" class="action-btn">X</button>
+                            <button type="button" class="action-btn">C</button>
+                            <button type="button" class="action-btn action-with-size">B</button>
+                            <button type="button" class="action-btn action-with-size">R</button>
+                            <button type="button" class="action-btn">F</button>
                         </div>
-                        <textarea id="${sequence.id}-action" name="${sequence.id}-action" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-purple-500 text-sm" placeholder="${sequence.label}のアクションを入力してください..."></textarea>
+                        <textarea id="${sequence.id}-action" name="${sequence.id}-action" rows="3" class="form-textarea" placeholder="${sequence.label}のアクションを入力してください..."></textarea>
                     </div>
                 `;
             });
@@ -470,161 +681,92 @@
             });
         }
 
-        // カードを生成して指定されたグリッドに追加する関数
+        // カードを生成して指定されたグリッドに追加する関数（最適化版）
         function renderCardGrid(gridElementId) {
             const gridElement = document.getElementById(gridElementId);
             if (!gridElement) {
                 console.error(`Grid element with ID ${gridElementId} not found.`);
                 return;
             }
+            
+            // 既に生成済みの場合はスキップ
+            if (gridElement.children.length > 0) return;
+            
             gridElement.innerHTML = '';
+            
             // 画面幅で分岐
-            if (window.innerWidth <= 600) {
+            const isMobile = window.innerWidth <= 600;
+            const cards = isMobile ? 
                 // スマホ：スートごと4列×13行
-                for (let rankIndex = 0; rankIndex < RANKS.length; rankIndex++) {
-                    for (let suitIndex = 0; suitIndex < SUITS.length; suitIndex++) {
-                        const suit = SUITS[suitIndex];
-                        const rank = RANKS[rankIndex];
-                        const card = ALL_CARDS.find(c => c.rank === rank && c.suit === suit);
-                        if (!card) continue;
-                        const cardDiv = document.createElement('div');
-                        cardDiv.classList.add('card-sprite');
-                        cardDiv.dataset.cardId = card.id;
-                        if (card.suit === 'h') cardDiv.classList.add('heart');
-                        if (card.suit === 'd') cardDiv.classList.add('diamond');
-                        cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
-                        cardDiv.addEventListener('click', () => {
-                            if (!cardDiv.classList.contains('disabled')) {
-                                handleCardClick(card.id, Object.keys(cardGridIds).find(key => cardGridIds[key] === gridElementId));
-                            }
-                        });
-                        cardDiv.addEventListener('mouseenter', () => {
-                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
-                                cardDiv.style.borderColor = '#9333ea';
-                            }
-                        });
-                        cardDiv.addEventListener('mouseleave', () => {
-                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
-                                cardDiv.style.borderColor = 'transparent';
-                            }
-                        });
-                        gridElement.appendChild(cardDiv);
-                    }
-                }
-                gridElement.style.gridTemplateColumns = 'repeat(4, 1fr)';
-            } else {
+                RANKS.flatMap(rank => SUITS.map(suit => ({ rank, suit }))) :
                 // PC：ランクごと13列×4行
-                for (let suitIndex = 0; suitIndex < SUITS.length; suitIndex++) {
-                    for (let rankIndex = 0; rankIndex < RANKS.length; rankIndex++) {
-                        const suit = SUITS[suitIndex];
-                        const rank = RANKS[rankIndex];
-                        const card = ALL_CARDS.find(c => c.rank === rank && c.suit === suit);
-                        if (!card) continue;
-                        const cardDiv = document.createElement('div');
-                        cardDiv.classList.add('card-sprite');
-                        cardDiv.dataset.cardId = card.id;
-                        if (card.suit === 'h') cardDiv.classList.add('heart');
-                        if (card.suit === 'd') cardDiv.classList.add('diamond');
-                        cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
-                        cardDiv.addEventListener('click', () => {
-                            if (!cardDiv.classList.contains('disabled')) {
-                                handleCardClick(card.id, Object.keys(cardGridIds).find(key => cardGridIds[key] === gridElementId));
-                            }
-                        });
-                        cardDiv.addEventListener('mouseenter', () => {
-                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
-                                cardDiv.style.borderColor = '#9333ea';
-                            }
-                        });
-                        cardDiv.addEventListener('mouseleave', () => {
-                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
-                                cardDiv.style.borderColor = 'transparent';
-                            }
-                        });
-                        gridElement.appendChild(cardDiv);
-                    }
-                }
-                gridElement.style.gridTemplateColumns = 'repeat(13, 1fr)';
-            }
+                SUITS.flatMap(suit => RANKS.map(rank => ({ rank, suit })));
+            
+            // DocumentFragmentを使用してDOM操作を最適化
+            const fragment = document.createDocumentFragment();
+            
+            cards.forEach(({ rank, suit }) => {
+                const card = ALL_CARDS.find(c => c.rank === rank && c.suit === suit);
+                if (!card) return;
+                
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('card-sprite');
+                cardDiv.dataset.cardId = card.id;
+                if (card.suit === 'h') cardDiv.classList.add('heart');
+                if (card.suit === 'd') cardDiv.classList.add('diamond');
+                cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
+                fragment.appendChild(cardDiv);
+            });
+            
+            gridElement.appendChild(fragment);
+            gridElement.style.gridTemplateColumns = isMobile ? 'repeat(4, 1fr)' : 'repeat(13, 1fr)';
         }
 
-        // アクションボタンの機能
+        // アクションボタンの機能（最適化版）
         function setupActionButtons() {
-            // 動的に生成されたボタンにイベントリスナーを追加
+            // イベント委譲でカードクリックを処理
             document.addEventListener('click', (e) => {
-                if (e.target.matches('button[type="button"]')) {
+                if (e.target.classList.contains('card-sprite')) {
+                    const cardId = e.target.dataset.cardId;
+                    const gridId = e.target.closest('.card-grid').id;
+                    const section = Object.keys(cardGridIds).find(key => cardGridIds[key] === gridId);
+                    
+                    if (!e.target.classList.contains('disabled')) {
+                        handleCardClick(cardId, section);
+                    }
+                }
+                
+                // アクションボタンの処理
+                if (e.target.matches('.action-btn')) {
+                    e.preventDefault();
                     const button = e.target;
                     const buttonText = button.textContent.trim();
                     
-                    // アクションボタン（X, C, B, R, F）のみを対象にする
                     if (['X', 'C', 'B', 'R', 'F'].includes(buttonText)) {
-                        e.preventDefault();
-                        
                         const actionText = buttonText;
-                        // ボタンから適切なtextareaを探す
-                        let inputField = null;
-                        
-                        // まず、ボタンが含まれるアクションセクションを探す
-                        const actionSection = button.closest('[id$="-action-section"]');
-                        if (actionSection) {
-                            // アクションセクション内のtextareaを探す
-                            inputField = actionSection.querySelector('textarea');
-                        }
-                        
-                        // 見つからない場合は、ボタンの親要素から再帰的に探す
-                        if (!inputField) {
-                            let parent = button.parentElement;
-                            while (parent && !inputField) {
-                                inputField = parent.querySelector('textarea');
-                                parent = parent.parentElement;
-                            }
-                        }
+                        const inputField = button.closest('[id$="-action-section"]')?.querySelector('textarea');
                         
                         if (inputField) {
-                            // BとRの場合はサイズ入力を求める
                             if (button.classList.contains('action-with-size')) {
                                 const size = prompt(`${actionText}のサイズを入力してください（例: 50）`);
                                 if (size !== null && size.trim() !== '') {
                                     const currentValue = inputField.value;
+                                    const sizeWithUnit = (actionText === 'R' && inputField.id === 'preflop-action') ?
+                                        (size.includes('bb') ? size : size + 'bb') :
+                                        (size.includes('%') ? size : size + '%');
                                     
-                                    // プリフロップのRの場合はBB表記、それ以外は%表記
-                                    let sizeWithUnit;
-                                    if (actionText === 'R' && inputField.id === 'preflop-action') {
-                                        sizeWithUnit = size.includes('bb') ? size : size + 'bb';
-                                    } else {
-                                        sizeWithUnit = size.includes('%') ? size : size + '%';
-                                    }
-                                    
-                                    // Hero: または Villain: の後にアクションを追加する場合
-                                    if (currentValue.endsWith('Hero: ') || currentValue.endsWith('Villain: ')) {
-                                        const newValue = currentValue + actionText + sizeWithUnit;
-                                        inputField.value = newValue;
-                                    } else {
-                                        // 既存の値がある場合はカンマを追加
-                                        const separator = currentValue ? ', ' : '';
-                                        const newValue = currentValue + separator + actionText + sizeWithUnit;
-                                        inputField.value = newValue;
-                                    }
+                                    const separator = currentValue ? ', ' : '';
+                                    const newValue = currentValue + separator + actionText + sizeWithUnit;
+                                    inputField.value = newValue;
                                     inputField.focus();
                                 }
                             } else {
-                                // 通常のアクション（X, C, F）
                                 const currentValue = inputField.value;
-                                
-                                // Hero: または Villain: の後にアクションを追加する場合
-                                if (currentValue.endsWith('Hero: ') || currentValue.endsWith('Villain: ')) {
-                                    const newValue = currentValue + actionText;
-                                    inputField.value = newValue;
-                                } else {
-                                    // 既存の値がある場合はカンマを追加
-                                    const separator = currentValue ? ', ' : '';
-                                    const newValue = currentValue + separator + actionText;
-                                    inputField.value = newValue;
-                                }
+                                const separator = currentValue ? ', ' : '';
+                                const newValue = currentValue + separator + actionText;
+                                inputField.value = newValue;
                                 inputField.focus();
                             }
-                        } else {
-                            console.error('textareaが見つかりませんでした');
                         }
                     }
                 }
