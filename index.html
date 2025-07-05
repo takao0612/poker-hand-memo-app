@@ -42,55 +42,51 @@
 
         /* 新しく追加するカードスプライトのスタイル */
         .card-sprite {
-            box-sizing: border-box; /* paddingやborderをwidth/heightに含める */
-            background-color: #374151; /* bg-gray-700 と同じ色 */
-            border: 1px solid #4B5563; /* border-gray-600 と同じ色 */
-            transition: border-color 0.2s ease-in-out; /* ホバー時の変化を滑らかに */
-        }
-
-        .card-sprite:hover:not(.selected):not(.disabled) {
-            border-color: #9333ea; /* hover:border-purple-600 と同じ色 */
-        }
-
-        /* 選択されたカードのスタイル */
-        .card-sprite.selected {
-            border-color: #a78bfa; /* purple-400 くらいの色で強調 */
-            box-shadow: 0 0 8px rgba(167, 139, 250, 0.7); /* 強めのシャドウ */
-            background-color: #4A008B; /* 少し暗めの紫で選択済みを強調 */
-        }
-
-        /* 無効化されたカードのスタイル */
-        .card-sprite.disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            filter: grayscale(80%); /* グレースケールで視覚的に無効化 */
-            pointer-events: none; /* クリックイベントを無効化 */
-        }
-
-        /* カードグリッドを明示的に13列×4行の長方形に揃える */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(13, 44px);
-            grid-auto-rows: 64px;
-            gap: 4px;
-            justify-content: start;
-            align-items: start;
-        }
-        .card-sprite {
-            width: 44px;
-            height: 64px;
+            width: 40px;
+            height: 63px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.3rem;
             font-weight: bold;
             letter-spacing: 0.02em;
-            color: #000; /* 文字色を黒に */
-            background: #fff; /* 背景色を白に */
+            color: #000;
+            background: #fff;
             border: 1px solid #4B5563;
             border-radius: 4px;
             transition: border-color 0.2s;
+            box-sizing: border-box;
         }
+
+        .card-sprite:hover:not(.selected):not(.disabled) {
+            border-color: #9333ea;
+        }
+
+        /* 選択されたカードのスタイル */
+        .card-sprite.selected {
+            border-color: #a78bfa;
+            box-shadow: 0 0 8px rgba(167, 139, 250, 0.7);
+            background-color: #4A008B;
+        }
+
+        /* 無効化されたカードのスタイル */
+        .card-sprite.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(80%);
+            pointer-events: none;
+        }
+
+        /* カードグリッドを明示的に13列×4行の長方形に揃える */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(13, 1fr);
+            column-gap: 1px;
+            row-gap: 2px;
+            justify-content: start;
+            align-items: start;
+        }
+        
         .card-sprite.heart, .card-sprite.diamond {
             color: #ef4444; /* ハート・ダイヤは赤色 */
         }
@@ -160,7 +156,7 @@
                                         <div class="card-display text-red-500">A♥</div>
                                         <div class="card-display text-gray-900">K♠</div>
                                     </div>
-                                    <div id="hero-card-grid" class="card-grid"></div>
+                                    <div id="hero-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
                                 </div>
                                 
                                 <!-- プリフロップアクション -->
@@ -182,7 +178,7 @@
                                         <div class="card-display text-red-500">J♦</div>
                                         <div class="card-display text-gray-900">2♣</div>
                                     </div>
-                                    <div id="flop-card-grid" class="card-grid"></div>
+                                    <div id="flop-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
                                 </div>
                                 
                                 <!-- フロップアクション -->
@@ -202,7 +198,7 @@
                                     <div class="flex gap-2 mb-4 h-[75px] items-center" id="turn-selected-cards-display">
                                         <div class="card-display text-gray-900">A♣</div>
                                     </div>
-                                    <div id="turn-card-grid" class="card-grid"></div>
+                                    <div id="turn-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
                                 </div>
                                 
                                 <!-- ターンアクション -->
@@ -222,7 +218,7 @@
                                     <div class="flex gap-2 mb-4 h-[75px] items-center" id="river-selected-cards-display">
                                         <div class="card-placeholder">?</div>
                                     </div>
-                                    <div id="river-card-grid" class="card-grid"></div>
+                                    <div id="river-card-grid" class="card-grid grid grid-cols-4 sm:grid-cols-7 md:grid-cols-13 gap-1"></div>
                                 </div>
                                 
                                 <!-- リバーアクション -->
@@ -481,53 +477,75 @@
                 console.error(`Grid element with ID ${gridElementId} not found.`);
                 return;
             }
-
             gridElement.innerHTML = '';
-
-            // セクション名を取得（gridElementIdから）
-            const section = Object.keys(cardGridIds).find(key => cardGridIds[key] === gridElementId);
-
-            ALL_CARDS.forEach(card => {
-                const cardDiv = document.createElement('div');
-                cardDiv.classList.add('card-sprite');
-                cardDiv.dataset.cardId = card.id;
-
-                // スートごとにクラスを追加
-                if (card.suit === 'h') cardDiv.classList.add('heart');
-                if (card.suit === 'd') cardDiv.classList.add('diamond');
-
-                cardDiv.style.width = '44px';
-                cardDiv.style.height = '64px';
-                cardDiv.style.display = 'flex';
-                cardDiv.style.alignItems = 'center';
-                cardDiv.style.justifyContent = 'center';
-                cardDiv.style.fontSize = '1.3rem';
-                cardDiv.style.fontWeight = 'bold';
-                cardDiv.style.letterSpacing = '0.02em';
-                cardDiv.style.color = (card.suit === 'h' || card.suit === 'd') ? '#ef4444' : '#000';
-                cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
-
-                // クリックイベントを追加
-                cardDiv.addEventListener('click', () => {
-                    if (!cardDiv.classList.contains('disabled')) {
-                        handleCardClick(card.id, section);
+            // 画面幅で分岐
+            if (window.innerWidth <= 600) {
+                // スマホ：スートごと4列×13行
+                for (let rankIndex = 0; rankIndex < RANKS.length; rankIndex++) {
+                    for (let suitIndex = 0; suitIndex < SUITS.length; suitIndex++) {
+                        const suit = SUITS[suitIndex];
+                        const rank = RANKS[rankIndex];
+                        const card = ALL_CARDS.find(c => c.rank === rank && c.suit === suit);
+                        if (!card) continue;
+                        const cardDiv = document.createElement('div');
+                        cardDiv.classList.add('card-sprite');
+                        cardDiv.dataset.cardId = card.id;
+                        if (card.suit === 'h') cardDiv.classList.add('heart');
+                        if (card.suit === 'd') cardDiv.classList.add('diamond');
+                        cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
+                        cardDiv.addEventListener('click', () => {
+                            if (!cardDiv.classList.contains('disabled')) {
+                                handleCardClick(card.id, Object.keys(cardGridIds).find(key => cardGridIds[key] === gridElementId));
+                            }
+                        });
+                        cardDiv.addEventListener('mouseenter', () => {
+                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
+                                cardDiv.style.borderColor = '#9333ea';
+                            }
+                        });
+                        cardDiv.addEventListener('mouseleave', () => {
+                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
+                                cardDiv.style.borderColor = 'transparent';
+                            }
+                        });
+                        gridElement.appendChild(cardDiv);
                     }
-                });
-
-                // ホバー・選択・無効化のスタイルは既存のまま
-                cardDiv.addEventListener('mouseenter', () => {
-                    if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
-                        cardDiv.style.borderColor = '#9333ea';
+                }
+                gridElement.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            } else {
+                // PC：ランクごと13列×4行
+                for (let suitIndex = 0; suitIndex < SUITS.length; suitIndex++) {
+                    for (let rankIndex = 0; rankIndex < RANKS.length; rankIndex++) {
+                        const suit = SUITS[suitIndex];
+                        const rank = RANKS[rankIndex];
+                        const card = ALL_CARDS.find(c => c.rank === rank && c.suit === suit);
+                        if (!card) continue;
+                        const cardDiv = document.createElement('div');
+                        cardDiv.classList.add('card-sprite');
+                        cardDiv.dataset.cardId = card.id;
+                        if (card.suit === 'h') cardDiv.classList.add('heart');
+                        if (card.suit === 'd') cardDiv.classList.add('diamond');
+                        cardDiv.textContent = `${card.rank}${SUIT_SYMBOLS[card.suit]}`;
+                        cardDiv.addEventListener('click', () => {
+                            if (!cardDiv.classList.contains('disabled')) {
+                                handleCardClick(card.id, Object.keys(cardGridIds).find(key => cardGridIds[key] === gridElementId));
+                            }
+                        });
+                        cardDiv.addEventListener('mouseenter', () => {
+                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
+                                cardDiv.style.borderColor = '#9333ea';
+                            }
+                        });
+                        cardDiv.addEventListener('mouseleave', () => {
+                            if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
+                                cardDiv.style.borderColor = 'transparent';
+                            }
+                        });
+                        gridElement.appendChild(cardDiv);
                     }
-                });
-                cardDiv.addEventListener('mouseleave', () => {
-                    if (!cardDiv.classList.contains('selected') && !cardDiv.classList.contains('disabled')) {
-                        cardDiv.style.borderColor = 'transparent';
-                    }
-                });
-
-                gridElement.appendChild(cardDiv);
-            });
+                }
+                gridElement.style.gridTemplateColumns = 'repeat(13, 1fr)';
+            }
         }
 
         // アクションボタンの機能
